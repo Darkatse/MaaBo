@@ -10,6 +10,9 @@ mod status;
 mod utils;
 mod version;
 
+use std::env;
+use pci_info::{enumerators, enumerators::PciEnumerator};
+
 use tauri::{
     api::notification::Notification, CustomMenuItem, Manager, SystemTray, SystemTrayEvent,
     SystemTrayMenu, SystemTrayMenuItem,
@@ -36,6 +39,22 @@ fn main() {
             panic!("获取webview版本失败,请确认是否安装\n{}", error.to_string());
         })
     );
+
+    if env::consts::OS == "linux" {
+        // 使用pci-info库来枚举 PCI 设备
+        let enumerator = enumerators::LinuxProcFsPciEnumerator::Fastest;
+        let pci_info = enumerator.enumerate_pci().unwrap();
+
+        for device in pci_info.iter().filter_map(Result::ok) {
+            // Nvidia的供应商ID通常为0x10DE
+            if device.vendor_id() == 0x10DE {
+                // 不想引入额外库的话直接对Linux全体禁用也行。
+                env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+                log::info!("检测到NVIDIA GPU, 启动兼容模式");
+                break
+            }
+        }
+    }
 
     let tray_menu = SystemTrayMenu::new()
         .add_item(CustomMenuItem::new("tips".to_string(), "给我一个提示"))
