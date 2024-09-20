@@ -54,14 +54,20 @@ const basicSupportStages: StageItem[] = [
 function filterSideStoryStages(sideStoryData: Record<string, any>): StageItem[] {
     const stageItems: StageItem[] = [];
 
-    for (const key of Object.keys(sideStoryData)) {
-        // 只取出有效的关卡名称
-        const parts = key.split('-');
-        if (parts.length > 1 && /^\d+$/.test(parts[1])) {
-            stageItems.push({
-                value: key,
-                label: key
-            });
+    // 先默认客户端为国服
+    const sideStoryStages = sideStoryData.Official.sideStoryStage;
+
+    for (const stage of sideStoryStages) {
+        // 直接使用stage对象中的'Value'属性
+        if (stage.Value) {
+            const parts = stage.Value.split('-');
+            // 只取出有效的关卡名称
+            if (parts.length > 1 && /^\d+$/.test(parts[1])) {
+                stageItems.push({
+                    value: stage.Value,
+                    label: stage.Value
+                });
+            }
         }
     }
 
